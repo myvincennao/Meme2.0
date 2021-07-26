@@ -19,6 +19,8 @@ class ViewController: UIViewController, UITextFieldDelegate, UIImagePickerContro
     
     @IBOutlet weak var spacingItemToolBar: UIBarButtonItem!
     
+    @IBOutlet weak var shareButton: UIBarButtonItem!
+    
     let memeTextAttributes: [NSAttributedString.Key: Any] = [
         .strokeColor: UIColor.black,
         NSAttributedString.Key.foregroundColor: UIColor.white,
@@ -37,57 +39,55 @@ class ViewController: UIViewController, UITextFieldDelegate, UIImagePickerContro
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        //Camera button disabled in the simulator
         cameraButton.isEnabled = UIImagePickerController.isSourceTypeAvailable(.camera)
         
-        self.topTextField.defaultTextAttributes = memeTextAttributes
-        //self.topTextField.background = .none
+       //Set Top and Bottom textFields
         self.topTextField.delegate = self
-        self.topTextField.text = "TOP"
-        self.topTextField.textAlignment = .center
-        
-        
-        
-        self.bottomTextField.defaultTextAttributes = memeTextAttributes
+        setupTextField(textField: topTextField, text: "TOP")
+       
         self.bottomTextField.delegate = self
-        self.bottomTextField.text = "BOTTOM"
-        self.bottomTextField.textAlignment = .center
+        setupTextField(textField: bottomTextField, text: "BOTTOM")
         
-        // Fixed Space
+        // Fixed Space on toolbar items
         spacingItemToolBar.width = self.view.bounds.width - self.toolBar.items![0].width - self.toolBar.items![1].width
-    
     }
     
     override func viewWillAppear(_ animated: Bool) {
-
         super.viewWillAppear(animated)
         subscribeToKeyboardNotifications()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
-
         super.viewWillDisappear(animated)
         unsubscribeFromKeyboardNotifications()
     }
+    
+    func setupTextField(textField: UITextField, text: String) {
+        textField.defaultTextAttributes = memeTextAttributes
+        textField.textAlignment = .center
+        textField.text = text
+        }
 
     // Picking Images
     @IBAction func pickAnImageFromAlbum(_ sender: Any) {
-    
-        let imagePicker = UIImagePickerController()
-        imagePicker.delegate = self
-        imagePicker.sourceType = .photoLibrary
-        present(imagePicker, animated: true, completion: nil)
+        pickImage(source: .photoLibrary)
     }
     
     @IBAction func pickAnImageFromCamera(_ sender: Any) {
+        pickImage(source: .camera)
+    }
     
+    func pickImage(source: UIImagePickerController.SourceType) {
         let imagePicker = UIImagePickerController()
         imagePicker.delegate = self
-        imagePicker.sourceType = .camera
+        imagePicker.sourceType = source
         present(imagePicker, animated: true, completion: nil)
-    }
+      }
     
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         
+        shareButton.isEnabled = true
         if let image = info[.originalImage] as? UIImage {
             imagePickerView.image = image
         }
@@ -127,7 +127,11 @@ class ViewController: UIViewController, UITextFieldDelegate, UIImagePickerContro
     
     @objc func keyboardWillShow(_ notification:Notification) {
 // to place our views we use frame. restamos el alto del teclado para mover la view para arriba. el top de la pantalla es y=0
-        view.frame.origin.y -= getKeyboardHeight(notification)
+        // no utilizar -= to avoid the accumulation of values.
+        
+        if bottomTextField.isFirstResponder {
+            view.frame.origin.y = -getKeyboardHeight(notification)
+        }
     }
 
     func getKeyboardHeight(_ notification:Notification) -> CGFloat {
@@ -151,21 +155,24 @@ class ViewController: UIViewController, UITextFieldDelegate, UIImagePickerContro
     
     func generateMemedImage() -> UIImage {
             
-            // TODO: Hide toolbar and navbar
-            toolBar.isHidden = true
-            navBar.isHidden = true
+        // TODO: Hide toolbar and navbar
+        hideShow(true)
             
-            // Render view to an image
-            UIGraphicsBeginImageContext(self.view.frame.size)
-            view.drawHierarchy(in: self.view.frame, afterScreenUpdates: true)
-            let memedImage:UIImage = UIGraphicsGetImageFromCurrentImageContext()!
-            UIGraphicsEndImageContext()
+        // Render view to an image
+        UIGraphicsBeginImageContext(self.view.frame.size)
+        view.drawHierarchy(in: self.view.frame, afterScreenUpdates: true)
+        let memedImage:UIImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
             
-            // TODO: Show toolbar and navbar
-            toolBar.isHidden = false
-            navBar.isHidden = false
+        // TODO: Show toolbar and navbar
+        hideShow(false)
             
-            return memedImage
+        return memedImage
+        }
+    
+    func hideShow(_ isHidden: Bool) {
+        toolBar.isHidden = isHidden
+        navBar.isHidden = isHidden
         }
     
     //Share Action
@@ -176,22 +183,17 @@ class ViewController: UIViewController, UITextFieldDelegate, UIImagePickerContro
             
             uiController.completionWithItemsHandler = {(activityType, completed, returnedItems, error) in
                 
-                if completed == true {
+                if completed {
                     print ("Success")
                     self.save()
                     self.dismiss(animated: true, completion: nil)
                 
                 // If the user cancells before sharing, the UI Activity View Controller is dismissed without doing anything.
-                }else if completed == false{
+                } else  {
                     self.dismiss(animated: true, completion: nil)
                 }
-
             }
         }
-    
-    
-    
-    
 }
 
 
