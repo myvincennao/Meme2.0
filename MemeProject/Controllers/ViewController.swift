@@ -28,13 +28,6 @@ class ViewController: UIViewController, UITextFieldDelegate, UIImagePickerContro
         NSAttributedString.Key.strokeWidth:  -3.0
     ]
     
-    struct Meme {
-        var topText: String
-        var bottomText: String
-        let originalImage: UIImage
-        let memedImage: UIImage
-    }
-    
     //Views
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -146,10 +139,17 @@ class ViewController: UIViewController, UITextFieldDelegate, UIImagePickerContro
         view.frame.origin.y = 0
     }
     
-    //Creando el meme
+    //Creando el meme y guardandolo en un array de memes
     func save() {
-
+        //update the meme
         let meme = Meme(topText: topTextField.text!, bottomText: bottomTextField.text!, originalImage: imagePickerView.image!, memedImage: generateMemedImage())
+        
+        //add it to the memes array on the Application Delegate
+        let object = UIApplication.shared.delegate
+        let appDelegate = object as! AppDelegate
+        appDelegate.memes.append(meme)
+        
+        //(UIApplication.shared.delegate as! AppDelegate).memes.append(meme)
     
     }
     
