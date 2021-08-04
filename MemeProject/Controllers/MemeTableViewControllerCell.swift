@@ -6,3 +6,11 @@
 //
 
 import Foundation
+import UIKit
+
+class MemeTableViewControllerCell: UITableViewCell {
+    
+    //MARK: Outlets
+        @IBOutlet weak var memeImage: UIImageView!
+        @IBOutlet weak var summary: UILabel!
+}
